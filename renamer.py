@@ -47,12 +47,12 @@ class MainFrame(wx.Frame):
         categorySplitter = wx.BoxSizer(wx.VERTICAL)
         splitterSizer.Add(categorySplitter, flag=wx.EXPAND)
         
-        # General, Music, and Movies buttons.
+        # General, Music, and Videos buttons.
         categorySizer = wx.GridSizer(rows=1, cols=3, vgap=0, hgap=1)
         
         categorySizer.AddMany( [(wx.Button(self, label='General', size=(100,40)), 0, wx.SHAPED),
                                 (wx.Button(self, label='Music', size=(100,40)), 0, wx.SHAPED),
-                                (wx.Button(self, label='Movies', size=(100,40)), 0, wx.SHAPED) ])
+                                (wx.Button(self, label='Videos', size=(100,40)), 0, wx.SHAPED) ])
                                 
         categorySplitter.Add(categorySizer, 0, wx.EXPAND)
         
