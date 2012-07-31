@@ -1,8 +1,5 @@
 import wx
 import os
-import socket
-import threading
-import random
 
 TITLE = "Renaming Tool"
 WIDTH = 800
@@ -50,20 +47,27 @@ class MainFrame(wx.Frame):
         # General, Music, and Videos buttons.
         categorySizer = wx.GridSizer(rows=1, cols=3, vgap=0, hgap=1)
         
-        categorySizer.AddMany( [(wx.Button(self, label='General', size=(100,40)), 0, wx.SHAPED),
-                                (wx.Button(self, label='Music', size=(100,40)), 0, wx.SHAPED),
-                                (wx.Button(self, label='Videos', size=(100,40)), 0, wx.SHAPED) ])
-                                
+        self.generalButton = wx.ToggleButton(self, label='General', size=(100,40))
+        self.musicButton = wx.ToggleButton(self, label='Music', size=(100,40))
+        self.videoButton = wx.ToggleButton(self, label='Videos', size=(100,40))
+        
+        categorySizer.AddMany( [(self.generalButton, 0, wx.SHAPED),
+                                (self.musicButton, 0, wx.SHAPED),
+                                (self.videoButton, 0, wx.SHAPED) ])
+        
+        self.generalButton.Bind(wx.EVT_TOGGLEBUTTON, self.selectGeneralButton)
+        self.musicButton.Bind(wx.EVT_TOGGLEBUTTON, self.selectMusicButton)
+        self.videoButton.Bind(wx.EVT_TOGGLEBUTTON, self.selectVideoButton)
+        
         categorySplitter.Add(categorySizer, 0, wx.EXPAND)
         
-        # The tabs.
-        tabs = wx.Notebook(self)
+        # Set up tabs and default to General.
+        self.tabs = wx.Notebook(self)
         
-        tabs.AddPage(Replace(tabs), "Replace")
-        tabs.AddPage(AddAndRemove(tabs), "Add/Remove")
-        tabs.AddPage(Casing(tabs), "Casing")
+        self.generalButton.SetValue(True)
+        self.displayTabs("general", self.tabs)
         
-        categorySplitter.Add(tabs, 1, wx.EXPAND)
+        categorySplitter.Add(self.tabs, 1, wx.EXPAND)
         
         # Rename button.
         categorySplitter.Add(wx.Button(self, label='Rename',size=(300,80)), 0, wx.ALIGN_BOTTOM)
@@ -73,6 +77,60 @@ class MainFrame(wx.Frame):
         splitterSizer.Add(self.display, proportion=2, flag=wx.EXPAND)
         splitterSizer.SetItemMinSize(self.display, (400,400))
 
+    def selectGeneralButton(self, e):
+        '''Turns all buttons but General off and displays the correct tabs.'''
+        isPressed = self.generalButton.GetValue()
+        
+        if isPressed:
+            self.musicButton.SetValue(False)
+            self.videoButton.SetValue(False)
+        else:
+            self.generalButton.SetValue(True)
+            
+        self.displayTabs("general", self.tabs)
+            
+    def selectMusicButton(self, e):
+        '''Turns all buttons but Music off and displays the correct tabs.'''
+        isPressed = self.musicButton.GetValue()
+        
+        if isPressed:
+            self.generalButton.SetValue(False)
+            self.videoButton.SetValue(False)
+        else:
+            self.musicButton.SetValue(True)
+            
+        self.displayTabs("music", self.tabs)
+        
+    def selectVideoButton(self, e):
+        '''Turns all buttons but Video off and displays the correct tabs.'''
+        isPressed = self.videoButton.GetValue()
+        
+        if isPressed:
+            self.generalButton.SetValue(False)
+            self.musicButton.SetValue(False)
+        else:
+            self.videoButton.SetValue(True)
+            
+        self.displayTabs("video", self.tabs)
+    
+    def displayTabs(self, button, notebook):
+        '''Controls which tabs are displayed when certain buttons are pressed.'''
+        notebook.DeleteAllPages()
+        
+        if button is "general":
+            notebook.AddPage(Replace(notebook), "Replace")
+            notebook.AddPage(AddAndRemove(notebook), "Add/Remove")
+            notebook.AddPage(Casing(notebook), "Casing")
+        elif button is "music":
+            notebook.AddPage(Replace(notebook), "Music 1")
+            notebook.AddPage(AddAndRemove(notebook), "Music 2")
+            notebook.AddPage(Casing(notebook), "Music 3")
+        elif button is "video":
+            notebook.AddPage(Replace(notebook), "Video 1")
+            notebook.AddPage(AddAndRemove(notebook), "Video 2")
+            notebook.AddPage(Casing(notebook), "Video 3")
+            
+    
     def openFolder(self, e):
         '''Brings up the file browser window to find a folder with files in it.'''
         pass
