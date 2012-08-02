@@ -189,11 +189,22 @@ class GroupOfFiles:
         self.workArea = workArea
         
     def addFile(self, file):
-        '''Adds a file to the array of files and shows it on screen.'''
+        '''Adds a file to the array of files and shows it on screen in its shortened form.'''
+        # arrayOfFiles gets the actual file.
         self.arrayOfFiles.append(file)
-        self.arrayOfPreviews.append(file)
-        self.workArea.InsertStringItem((len(self.arrayOfFiles) - 1), file.name)
-        self.workArea.SetStringItem((len(self.arrayOfPreviews) - 1), 1, file.name)
+        
+        # arrayOfPreviews gets the shortened string form of the file.
+        shortenedFileName = self.shortenFileName(file)
+        self.arrayOfPreviews.append(shortenedFileName)
+        
+        # Display the short file name in a new row.
+        self.workArea.InsertStringItem((len(self.arrayOfFiles) - 1), shortenedFileName)
+        self.workArea.SetStringItem((len(self.arrayOfPreviews) - 1), 1, shortenedFileName)
+        
+    def shortenFileName(self, file):
+        '''Finds the first backslash from the end of the file name and gets rid of everything but the file's name.'''
+        shortenedFileName = file.name[(file.name.rindex('\\') + 1):]
+        return shortenedFileName
                 
 '''Renaming Rules.'''
         
