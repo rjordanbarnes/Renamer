@@ -46,31 +46,6 @@ class MainFrame(wx.Frame):
         categorySplitter = wx.BoxSizer(wx.VERTICAL)
         splitterSizer.Add(categorySplitter, flag=wx.EXPAND)
         
-        # General, Music, and Videos buttons.
-        categorySizer = wx.GridSizer(rows=1, cols=3, vgap=0, hgap=1)
-        
-        self.generalButton = wx.ToggleButton(self, label='General', size=(100,40))
-        self.musicButton = wx.ToggleButton(self, label='Music', size=(100,40))
-        self.videoButton = wx.ToggleButton(self, label='Videos', size=(100,40))
-        
-        categorySizer.AddMany( [(self.generalButton, 0, wx.SHAPED),
-                                (self.musicButton, 0, wx.SHAPED),
-                                (self.videoButton, 0, wx.SHAPED) ])
-        
-        self.generalButton.Bind(wx.EVT_TOGGLEBUTTON, self.selectGeneralButton)
-        self.musicButton.Bind(wx.EVT_TOGGLEBUTTON, self.selectMusicButton)
-        self.videoButton.Bind(wx.EVT_TOGGLEBUTTON, self.selectVideoButton)
-        
-        categorySplitter.Add(categorySizer, 0, wx.EXPAND)
-        
-        # Set up tabs and default to General.
-        self.tabs = wx.Notebook(self)
-        
-        self.generalButton.SetValue(True)
-        self.displayTabs("general", self.tabs)
-        
-        categorySplitter.Add(self.tabs, 1, wx.EXPAND)
-        
         # Rename button.
         categorySplitter.Add(wx.Button(self, label='Rename',size=(300,80)), 0, wx.ALIGN_BOTTOM)
         
@@ -93,6 +68,31 @@ class MainFrame(wx.Frame):
         self.groupOfFiles = GroupOfFiles(self.workArea)
         fileDropArea = FileDrop(self.workArea, self.groupOfFiles)
         self.workArea.SetDropTarget(fileDropArea)
+        
+        # General, Music, and Videos buttons.
+        categorySizer = wx.GridSizer(rows=1, cols=3, vgap=0, hgap=1)
+        
+        self.generalButton = wx.ToggleButton(self, label='General', size=(100,40))
+        self.musicButton = wx.ToggleButton(self, label='Music', size=(100,40))
+        self.videoButton = wx.ToggleButton(self, label='Videos', size=(100,40))
+        
+        categorySizer.AddMany( [(self.generalButton, 0, wx.SHAPED),
+                                (self.musicButton, 0, wx.SHAPED),
+                                (self.videoButton, 0, wx.SHAPED) ])
+        
+        self.generalButton.Bind(wx.EVT_TOGGLEBUTTON, self.selectGeneralButton)
+        self.musicButton.Bind(wx.EVT_TOGGLEBUTTON, self.selectMusicButton)
+        self.videoButton.Bind(wx.EVT_TOGGLEBUTTON, self.selectVideoButton)
+        
+        categorySplitter.Add(categorySizer, 0, wx.EXPAND)
+        
+        # Set up tabs and default to General.
+        self.tabs = wx.Notebook(self)
+        
+        self.generalButton.SetValue(True)
+        self.displayTabs("general", self.tabs, self.groupOfFiles)
+        
+        categorySplitter.Add(self.tabs, 1, wx.EXPAND)
         
     def selectGeneralButton(self, e):
         '''Turns all buttons but General off and displays the correct tabs.'''
@@ -130,22 +130,22 @@ class MainFrame(wx.Frame):
             
         self.displayTabs("video", self.tabs)
     
-    def displayTabs(self, button, notebook):
+    def displayTabs(self, button, notebook, groupOfFiles):
         '''Controls which tabs are displayed when certain buttons are pressed.'''
         notebook.DeleteAllPages()
         
         if button is "general":
-            notebook.AddPage(Replace(notebook), "Replace")
-            notebook.AddPage(AddAndRemove(notebook), "Add/Remove")
-            notebook.AddPage(Casing(notebook), "Casing")
+            notebook.AddPage(Replace(notebook, groupOfFiles), "Replace")
+            notebook.AddPage(AddAndRemove(notebook, groupOfFiles), "Add/Remove")
+            notebook.AddPage(Casing(notebook, groupOfFiles), "Casing")
         elif button is "music":
-            notebook.AddPage(Replace(notebook), "Music 1")
-            notebook.AddPage(AddAndRemove(notebook), "Music 2")
-            notebook.AddPage(Casing(notebook), "Music 3")
+            notebook.AddPage(Replace(notebook, groupOfFiles), "Music 1")
+            notebook.AddPage(AddAndRemove(notebook, groupOfFiles), "Music 2")
+            notebook.AddPage(Casing(notebook, groupOfFiles), "Music 3")
         elif button is "video":
-            notebook.AddPage(Replace(notebook), "Video 1")
-            notebook.AddPage(AddAndRemove(notebook), "Video 2")
-            notebook.AddPage(Casing(notebook), "Video 3")
+            notebook.AddPage(Replace(notebook, groupOfFiles), "Video 1")
+            notebook.AddPage(AddAndRemove(notebook, groupOfFiles), "Video 2")
+            notebook.AddPage(Casing(notebook, groupOfFiles), "Video 3")
               
     def openFolder(self, e):
         '''Brings up the file browser window to find a folder with files in it.'''
@@ -189,26 +189,41 @@ class GroupOfFiles:
         self.workArea = workArea
         
     def addFile(self, file):
-        '''Adds a file to the array of files and shows it on screen.'''
+        '''Adds a file to the array of files and shows it on screen in its shortened form.'''
+        # arrayOfFiles gets the actual file.
         self.arrayOfFiles.append(file)
-        self.arrayOfPreviews.append(file)
-        self.workArea.InsertStringItem((len(self.arrayOfFiles) - 1), file.name)
-        self.workArea.SetStringItem((len(self.arrayOfPreviews) - 1), 1, file.name)
+        
+        # arrayOfPreviews gets the shortened string form of the file.
+        shortenedFileName = self.shortenFileName(file)
+        self.arrayOfPreviews.append(shortenedFileName)
+        
+        # Display the short file name in a new row.
+        self.workArea.InsertStringItem((len(self.arrayOfFiles) - 1), shortenedFileName)
+        self.workArea.SetStringItem((len(self.arrayOfPreviews) - 1), 1, shortenedFileName)
+        
+    def shortenFileName(self, file):
+        '''Finds the first backslash from the end of the file name and gets rid of everything but the file's name.'''
+        shortenedFileName = file.name[(file.name.rindex('\\') + 1):]
+        return shortenedFileName
+                
+                
+                
+                
                 
 '''Renaming Rules.'''
         
 class Replace(wx.Panel):
     def __init__(self, parent):
-        wx.Panel.__init__(self, parent)
+        wx.Panel.__init__(self, parent, files)
         t = wx.StaticText(self, -1, "Replace text", (20,20))
 
 class AddAndRemove(wx.Panel):
-    def __init__(self, parent):
+    def __init__(self, parent, files):
         wx.Panel.__init__(self, parent)
         t = wx.StaticText(self, -1, "Add/Remove text", (40,40))
 
 class Casing(wx.Panel):
-    def __init__(self, parent):
+    def __init__(self, parent, files):
         wx.Panel.__init__(self, parent)
         t = wx.StaticText(self, -1, "Change Casing of text", (60,60))
 	
