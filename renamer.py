@@ -1,6 +1,7 @@
 import wx
 import os
 import sys
+import re
 
 TITLE = "Renaming Tool"
 WIDTH = 900
@@ -63,17 +64,6 @@ class MainFrame(wx.Frame):
         
         categorySplitter.Add(categorySizer, 0, wx.EXPAND)
         
-        # Set up tabs and default to General.
-        self.tabs = wx.Notebook(self)
-        
-        self.generalButton.SetValue(True)
-        self.displayTabs("general", self.tabs)
-        
-        categorySplitter.Add(self.tabs, 1, wx.EXPAND)
-        
-        # Rename button.
-        categorySplitter.Add(wx.Button(self, label='Rename',size=(300,80)), 0, wx.ALIGN_BOTTOM)
-        
         # Sets up a new Work Area panel that's linked to the Work Area Sizer.
         workAreaSizer = wx.BoxSizer(wx.HORIZONTAL)
         workAreaPanel = wx.Panel(self, -1)
@@ -93,6 +83,17 @@ class MainFrame(wx.Frame):
         self.groupOfFiles = GroupOfFiles(self.workArea)
         fileDropArea = FileDrop(self.workArea, self.groupOfFiles)
         self.workArea.SetDropTarget(fileDropArea)
+        
+        # Set up tabs and default to General.
+        self.tabs = wx.Notebook(self)
+        
+        self.generalButton.SetValue(True)
+        self.displayTabs("general", self.tabs)
+        
+        categorySplitter.Add(self.tabs, 1, wx.EXPAND)
+        
+        # Rename button.
+        categorySplitter.Add(wx.Button(self, label='Rename',size=(300,80)), 0, wx.ALIGN_BOTTOM)
         
     def selectGeneralButton(self, e):
         '''Turns all buttons but General off and displays the correct tabs.'''
@@ -134,19 +135,20 @@ class MainFrame(wx.Frame):
         '''Controls which tabs are displayed when certain buttons are pressed.'''
         notebook.DeleteAllPages()
         
+        files = self.groupOfFiles
         if button is "general":
-            notebook.AddPage(Replace(notebook), "Replace")
-            notebook.AddPage(AddAndRemove(notebook), "Add/Remove")
-            notebook.AddPage(Casing(notebook), "Casing")
+            notebook.AddPage(Replace(notebook, files), "Replace")
+            notebook.AddPage(AddAndRemove(notebook, files), "Add/Remove")
+            notebook.AddPage(Casing(notebook, files), "Casing")
         elif button is "music":
-            notebook.AddPage(Replace(notebook), "Music 1")
-            notebook.AddPage(AddAndRemove(notebook), "Music 2")
-            notebook.AddPage(Casing(notebook), "Music 3")
+            notebook.AddPage(Replace(notebook, files), "Music 1")
+            notebook.AddPage(AddAndRemove(notebook, files), "Music 2")
+            notebook.AddPage(Casing(notebook, files), "Music 3")
         elif button is "video":
-            notebook.AddPage(Replace(notebook), "Video 1")
-            notebook.AddPage(AddAndRemove(notebook), "Video 2")
-            notebook.AddPage(Casing(notebook), "Video 3")
-              
+            notebook.AddPage(Replace(notebook, files), "Video 1")
+            notebook.AddPage(AddAndRemove(notebook, files), "Video 2")
+            notebook.AddPage(Casing(notebook, files), "Video 3")
+            
     def openFolder(self, e):
         '''Brings up the file browser window to find a folder with files in it.'''
         pass
@@ -205,21 +207,39 @@ class GroupOfFiles:
         '''Finds the first backslash from the end of the file name and gets rid of everything but the file's name.'''
         shortenedFileName = file.name[(file.name.rindex('\\') + 1):]
         return shortenedFileName
-                
+      
+
+
+
+      
 '''Renaming Rules.'''
         
 class Replace(wx.Panel):
-    def __init__(self, parent):
+    def __init__(self, parent, files):
         wx.Panel.__init__(self, parent)
-        t = wx.StaticText(self, -1, "Replace text", (20,20))
+        
+        self.files = files
+        
+        wx.StaticText(self, -1, "Find", (40,30))
+        findBox = wx.TextCtrl(self, pos=(40,50), size=(200,20))
+        wx.StaticText(self, -1, "Replace With", (40,80))
+        replaceBox = wx.TextCtrl(self, pos=(40,100), size=(200,20))
+        
+        self.Bind(wx.EVT_TEXT, self.updatePreview, findBox)
+        self.Bind(wx.EVT_TEXT, self.updatePreview, replaceBox)
+                    
+    def updatePreview(self, e):
+        '''What happens when the Find box or Replace box is edited.'''
+        for file in self.files.arrayOfPreviews:
+            print file
 
 class AddAndRemove(wx.Panel):
-    def __init__(self, parent):
+    def __init__(self, parent, files):
         wx.Panel.__init__(self, parent)
         t = wx.StaticText(self, -1, "Add/Remove text", (40,40))
 
 class Casing(wx.Panel):
-    def __init__(self, parent):
+    def __init__(self, parent, files):
         wx.Panel.__init__(self, parent)
         t = wx.StaticText(self, -1, "Change Casing of text", (60,60))
 	
