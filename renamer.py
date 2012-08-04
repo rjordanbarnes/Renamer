@@ -11,6 +11,7 @@ class MainFrame(wx.Frame):
     def __init__(self, parent, title, width, height):
         wx.Frame.__init__(self, parent, title=title, size=(width, height), style=wx.DEFAULT_FRAME_STYLE)
         self.Center()
+        self.SetMinSize((WIDTH-250, HEIGHT-200))
         self.initializeMenuBar()
         self.initializeContents()
         
