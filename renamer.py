@@ -240,9 +240,17 @@ class Replace(wx.Panel):
     def refresh(self):
         '''Refreshes the preview column with replaced letters.'''
         if (self.findBox.GetLineLength(0) > 0) and (self.replaceBox.GetLineLength(0) > 0):
+            # If the boxes have something in it, edit the preview.
             counter = 0
             for file in self.files.arrayOfPreviews:
                 newFile = file.replace(self.findBox.GetLineText(0), self.replaceBox.GetLineText(0))
+                self.files.workArea.SetStringItem(counter, 1, newFile)
+                counter += 1
+        else:
+            # If one of the boxes has nothing in it, return to the default.
+            counter = 0
+            for file in self.files.arrayOfPreviews:
+                newFile = self.files.arrayOfOriginals[counter]
                 self.files.workArea.SetStringItem(counter, 1, newFile)
                 counter += 1
             
