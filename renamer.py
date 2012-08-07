@@ -1,7 +1,7 @@
 import wx
 import os
 import sys
-import re
+import unicodedata
 
 TITLE = "Renaming Tool"
 WIDTH = 900
@@ -189,6 +189,7 @@ class GroupOfFiles:
     def __init__(self, workArea):
         self.arrayOfFiles = []
         self.arrayOfPreviews = []
+        self.arrayOfOriginals = []
         self.workArea = workArea
         
     def addFile(self, file):
@@ -200,6 +201,9 @@ class GroupOfFiles:
         shortenedFileName = self.shortenFileName(file)
         self.arrayOfPreviews.append(shortenedFileName)
         
+        # arrayOfOriginals gets the shortened string form too, but is never altered.
+        self.arrayOfOriginals.append(shortenedFileName)
+        
         # Display the short file name in a new row.
         self.workArea.InsertStringItem((len(self.arrayOfFiles) - 1), shortenedFileName)
         self.workArea.SetStringItem((len(self.arrayOfPreviews) - 1), 1, shortenedFileName)
@@ -207,7 +211,8 @@ class GroupOfFiles:
     def shortenFileName(self, file):
         '''Finds the first backslash from the end of the file name and gets rid of everything but the file's name.'''
         shortenedFileName = file.name[(file.name.rindex('\\') + 1):]
-        return shortenedFileName
+        newShortFileName = unicodedata.normalize('NFKD', shortenedFileName).encode('ascii','ignore')
+        return newShortFileName
       
 
 
@@ -222,18 +227,29 @@ class Replace(wx.Panel):
         self.files = files
         
         wx.StaticText(self, -1, "Find", (40,30))
-        findBox = wx.TextCtrl(self, pos=(40,50), size=(200,20))
+        self.findBox = wx.TextCtrl(self, pos=(40,50), size=(200,20))
         wx.StaticText(self, -1, "Replace With", (40,80))
-        replaceBox = wx.TextCtrl(self, pos=(40,100), size=(200,20))
+        self.replaceBox = wx.TextCtrl(self, pos=(40,100), size=(200,20))
         
-        self.Bind(wx.EVT_TEXT, self.updatePreview, findBox)
-        self.Bind(wx.EVT_TEXT, self.updatePreview, replaceBox)
-                    
+        self.Bind(wx.EVT_TEXT, self.updatePreview, self.findBox)
+        self.Bind(wx.EVT_TEXT, self.updatePreview, self.replaceBox)
+        
+        self.currentFindContents = ''
+        self.currentReplaceContents = ''
+    
+    def refresh(self):
+        '''Refreshes the preview column with replaced letters.'''
+        if (self.findBox.GetLineLength(0) > 0) and (self.replaceBox.GetLineLength(0) > 0):
+            counter = 0
+            for file in self.files.arrayOfPreviews:
+                newFile = file.replace(self.findBox.GetLineText(0), self.replaceBox.GetLineText(0))
+                self.files.workArea.SetStringItem(counter, 1, newFile)
+                counter += 1
+            
     def updatePreview(self, e):
         '''What happens when the Find box or Replace box is edited.'''
-        for file in self.files.arrayOfPreviews:
-            print file
-
+        self.refresh()
+        
 class AddAndRemove(wx.Panel):
     def __init__(self, parent, files):
         wx.Panel.__init__(self, parent)
