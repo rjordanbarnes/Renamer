@@ -94,7 +94,9 @@ class MainFrame(wx.Frame):
         categorySplitter.Add(self.tabs, 1, wx.EXPAND)
         
         # Rename button.
-        categorySplitter.Add(wx.Button(self, label='Rename',size=(300,80)), 0, wx.ALIGN_BOTTOM)
+        self.renameButton = wx.Button(self, label='Rename',size=(300,80))
+        categorySplitter.Add(self.renameButton, 0, wx.ALIGN_BOTTOM)
+        self.renameButton.Bind(wx.EVT_BUTTON, self.selectRenameButton)
         
     def selectGeneralButton(self, e):
         '''Turns all buttons but General off and displays the correct tabs.'''
@@ -150,6 +152,10 @@ class MainFrame(wx.Frame):
             notebook.AddPage(AddAndRemove(notebook, files), "Video 2")
             notebook.AddPage(Casing(notebook, files), "Video 3")
             
+    def selectRenameButton(self, e):
+        '''Renames the files with the file Previews.'''
+        self.groupOfFiles.renameFiles()    
+            
     def openFolder(self, e):
         '''Brings up the file browser window to find a folder with files in it.'''
         pass
@@ -178,6 +184,7 @@ class FileDrop(wx.FileDropTarget):
                 # Open file and add it to the file array.
                 file = open(name, 'r')
                 self.groupOfFiles.addFile(file)
+                file.close()
             except IOError, error:
                 dlg = wx.MessageDialog(None, 'Error opening file\n' + str(error))
                 dlg.ShowModal()
@@ -213,7 +220,20 @@ class GroupOfFiles:
         shortenedFileName = file.name[(file.name.rindex('\\') + 1):]
         newShortFileName = unicodedata.normalize('NFKD', shortenedFileName).encode('ascii','ignore')
         return newShortFileName
-      
+    
+    def renameFiles(self):
+        '''Renames each file to the name found in the Preview column.'''
+        counter = 0
+        for file in self.arrayOfFiles:
+            os.chdir("D:\\Jordan\\Desktop\\lol\\")
+            print os.getcwd()
+            try:
+                # Changes the current file name to the string found in the Preview column.
+                os.rename(self.shortenFileName(file), self.workArea.GetItem(counter, 1).GetText())
+                print "Yay"
+            except:
+                print "Nope"
+            counter += 1
 
 
 
