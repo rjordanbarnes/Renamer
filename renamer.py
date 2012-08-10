@@ -14,7 +14,7 @@ class MainFrame(wx.Frame):
         self.SetMinSize((WIDTH-250, HEIGHT-200))
         self.initializeMenuBar()
         self.initializeContents()
-        
+    
     def initializeMenuBar(self):
         '''Initializes the important Menu Bar.'''
         # File Menu entries.
@@ -37,6 +37,9 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.openFolder, menuOpen)
         self.Bind(wx.EVT_MENU, self.exitProgram, menuExit)
         self.Bind(wx.EVT_MENU, self.aboutProgram, menuAbout)
+        
+        # General key binder.
+        self.Bind(wx.EVT_CHAR_HOOK, self.onKeyPress)
         
     def initializeContents(self):
         ''' Initializes the contents of the window.'''
@@ -68,7 +71,7 @@ class MainFrame(wx.Frame):
         # Sets up a new Work Area panel that's linked to the Work Area Sizer.
         workAreaSizer = wx.BoxSizer(wx.HORIZONTAL)
         workAreaPanel = wx.Panel(self, -1)
-        self.workArea = wx.ListCtrl(workAreaPanel, -1, style=wx.LC_REPORT)
+        self.workArea = WorkArea(workAreaPanel, -1)
         
         # The Work Area columns.
         self.workArea.InsertColumn(0, 'Name', width=280)
@@ -84,6 +87,7 @@ class MainFrame(wx.Frame):
         self.groupOfFiles = GroupOfFiles(self.workArea)
         fileDropArea = FileDrop(self.workArea, self.groupOfFiles)
         self.workArea.SetDropTarget(fileDropArea)
+        self.workArea.SetGroupOfFiles(self.groupOfFiles)
         
         # Set up tabs and default to General.
         self.tabs = wx.Notebook(self)
@@ -97,7 +101,12 @@ class MainFrame(wx.Frame):
         self.renameButton = wx.Button(self, label='Rename',size=(300,80))
         categorySplitter.Add(self.renameButton, 0, wx.ALIGN_BOTTOM)
         self.renameButton.Bind(wx.EVT_BUTTON, self.selectRenameButton)
-        
+    
+    def onKeyPress(self, event):
+        '''What happens when any key is pressed.'''
+        if event.GetKeyCode() == wx.WXK_DELETE:
+            self.workArea.onDelete(self)
+    
     def selectGeneralButton(self, e):
         '''Turns all buttons but General off and displays the correct tabs.'''
         isPressed = self.generalButton.GetValue()
@@ -169,7 +178,59 @@ class MainFrame(wx.Frame):
     def exitProgram(self, e):
         ''' Exits the program.'''
         self.Close()
+        
+class WorkArea(wx.ListCtrl):
+    def __init__(self, parent, ID=wx.ID_ANY):
+        wx.ListCtrl.__init__(self, parent, ID)
+        
+        self.SetSingleStyle(wx.LC_REPORT)
+        
+        self.Bind(wx.EVT_LEFT_DOWN, self.onLeftDown)
+        self.Bind(wx.EVT_RIGHT_DOWN, self.onRightDown)
+        self.Bind(wx.EVT_CHAR_HOOK, self.onKeyPress)
 
+        # currently selected row
+        self.cur = None
+    
+    def SetGroupOfFiles(self, groupOfFiles):
+        self.groupOfFiles = groupOfFiles
+    
+    def onKeyPress(self, event):
+        if event.GetKeyCode() == wx.WXK_DELETE:
+            self.onDelete()
+    
+    def onLeftDown(self, event):
+        '''Selects an entry in the Work Area.'''
+        if self.cur != None:
+            self.Select( self.cur, 0) # deselect currently selected item
+
+        x,y = event.GetPosition()
+        row,flags = self.HitTest( (x,y) )
+
+        self.Select(row)
+        self.cur = row
+
+    def onRightDown(self, event):
+        '''Brings up the context menu in the Work Area.'''
+        menu = wx.Menu()
+        delete = menu.Append(wx.ID_ANY, 'Remove')
+
+        self.Bind(wx.EVT_MENU, self.onDelete, delete)
+
+        # select row
+        self.onLeftDown(event)
+
+        self.PopupMenu(menu, event.GetPosition())
+        
+    def onDelete(self, event):
+        '''Removes the row in the Work Area and gets rid of the item from the arrays.'''
+        self.DeleteItem(self.cur)
+        
+        for file in self.groupOfFiles.arrayOfFiles:
+            self.groupOfFiles.arrayOfFiles.pop(self.cur)
+            self.groupOfFiles.arrayOfPreviews.pop(self.cur)
+            self.groupOfFiles.arrayOfOriginals.pop(self.cur)
+        
 class FileDrop(wx.FileDropTarget):
     '''The File Drop Area object.'''
     def __init__(self, workArea, groupOfFiles):
@@ -181,7 +242,7 @@ class FileDrop(wx.FileDropTarget):
         '''Whenever a file is dropped on the area.'''
         for name in filenames:
             try:
-                # Open file and add it to the file array.
+                # Open file, add it to the file array, then close it.
                 file = open(name, 'r')
                 self.groupOfFiles.addFile(file)
                 file.close()
