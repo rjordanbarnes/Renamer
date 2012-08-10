@@ -38,9 +38,6 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.exitProgram, menuExit)
         self.Bind(wx.EVT_MENU, self.aboutProgram, menuAbout)
         
-        # General key binder.
-        self.Bind(wx.EVT_CHAR_HOOK, self.onKeyPress)
-        
     def initializeContents(self):
         ''' Initializes the contents of the window.'''
         # Splits controls from work area.
@@ -101,11 +98,6 @@ class MainFrame(wx.Frame):
         self.renameButton = wx.Button(self, label='Rename',size=(300,80))
         categorySplitter.Add(self.renameButton, 0, wx.ALIGN_BOTTOM)
         self.renameButton.Bind(wx.EVT_BUTTON, self.selectRenameButton)
-    
-    def onKeyPress(self, event):
-        '''What happens when any key is pressed.'''
-        if event.GetKeyCode() == wx.WXK_DELETE:
-            self.workArea.onDelete(self)
     
     def selectGeneralButton(self, e):
         '''Turns all buttons but General off and displays the correct tabs.'''
@@ -187,22 +179,17 @@ class WorkArea(wx.ListCtrl):
         
         self.Bind(wx.EVT_LEFT_DOWN, self.onLeftDown)
         self.Bind(wx.EVT_RIGHT_DOWN, self.onRightDown)
-        self.Bind(wx.EVT_CHAR_HOOK, self.onKeyPress)
 
-        # currently selected row
+        # Currently selected row
         self.cur = None
     
     def SetGroupOfFiles(self, groupOfFiles):
         self.groupOfFiles = groupOfFiles
     
-    def onKeyPress(self, event):
-        if event.GetKeyCode() == wx.WXK_DELETE:
-            self.onDelete()
-    
     def onLeftDown(self, event):
         '''Selects an entry in the Work Area.'''
         if self.cur != None:
-            self.Select( self.cur, 0) # deselect currently selected item
+            self.Select( self.cur, 0) # Deselect currently selected item
 
         x,y = event.GetPosition()
         row,flags = self.HitTest( (x,y) )
@@ -217,7 +204,7 @@ class WorkArea(wx.ListCtrl):
 
         self.Bind(wx.EVT_MENU, self.onDelete, delete)
 
-        # select row
+        # Select row
         self.onLeftDown(event)
 
         self.PopupMenu(menu, event.GetPosition())
@@ -225,11 +212,9 @@ class WorkArea(wx.ListCtrl):
     def onDelete(self, event):
         '''Removes the row in the Work Area and gets rid of the item from the arrays.'''
         self.DeleteItem(self.cur)
-        
-        for file in self.groupOfFiles.arrayOfFiles:
-            self.groupOfFiles.arrayOfFiles.pop(self.cur)
-            self.groupOfFiles.arrayOfPreviews.pop(self.cur)
-            self.groupOfFiles.arrayOfOriginals.pop(self.cur)
+        self.groupOfFiles.arrayOfFiles.pop(self.cur)
+        self.groupOfFiles.arrayOfPreviews.pop(self.cur)
+        self.groupOfFiles.arrayOfOriginals.pop(self.cur)
         
 class FileDrop(wx.FileDropTarget):
     '''The File Drop Area object.'''
@@ -241,17 +226,19 @@ class FileDrop(wx.FileDropTarget):
     def OnDropFiles(self, x, y, filenames):
         '''Whenever a file is dropped on the area.'''
         for name in filenames:
-            try:
-                # Open file, add it to the file array, then close it.
-                file = open(name, 'r')
-                self.groupOfFiles.addFile(file)
-                file.close()
-            except IOError, error:
-                dlg = wx.MessageDialog(None, 'Error opening file\n' + str(error))
-                dlg.ShowModal()
-            except UnicodeDecodeError, error:
-                dlg = wx.MessageDialog(None, 'Cannot open non ascii files\n' + str(error))
-                dlg.ShowModal()
+            # No duplicates.
+            if self.groupOfFiles.arrayOfOriginals.count(name) == 0:
+                try:
+                    # Open file, add it to the file array, then close it.
+                    file = open(name, 'r')
+                    self.groupOfFiles.addFile(file)
+                    file.close()
+                except IOError, error:
+                    dlg = wx.MessageDialog(None, 'Error opening file\n' + str(error))
+                    dlg.ShowModal()
+                except UnicodeDecodeError, error:
+                    dlg = wx.MessageDialog(None, 'Cannot open non ascii files\n' + str(error))
+                    dlg.ShowModal()
 
 class GroupOfFiles:
     def __init__(self, workArea):
@@ -269,8 +256,8 @@ class GroupOfFiles:
         shortenedFileName = self.shortenFileName(file)
         self.arrayOfPreviews.append(shortenedFileName)
         
-        # arrayOfOriginals gets the shortened string form too, but is never altered.
-        self.arrayOfOriginals.append(shortenedFileName)
+        # arrayOfOriginals gets the full unaltered name of the file.
+        self.arrayOfOriginals.append(file.name)
         
         # Display the short file name in a new row.
         self.workArea.InsertStringItem((len(self.arrayOfFiles) - 1), shortenedFileName)
