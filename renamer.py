@@ -215,6 +215,7 @@ class WorkArea(wx.ListCtrl):
         self.groupOfFiles.arrayOfFiles.pop(self.cur)
         self.groupOfFiles.arrayOfPreviews.pop(self.cur)
         self.groupOfFiles.arrayOfOriginals.pop(self.cur)
+        self.groupOfFiles.arrayOfShorter.pop(self.cur)
         
 class FileDrop(wx.FileDropTarget):
     '''The File Drop Area object.'''
@@ -245,6 +246,7 @@ class GroupOfFiles:
         self.arrayOfFiles = []
         self.arrayOfPreviews = []
         self.arrayOfOriginals = []
+        self.arrayOfShorter = []
         self.workArea = workArea
         
     def addFile(self, file):
@@ -258,6 +260,9 @@ class GroupOfFiles:
         
         # arrayOfOriginals gets the full unaltered name of the file.
         self.arrayOfOriginals.append(file.name)
+        
+        # arrayOfShorter gets the shortened string and never changes.
+        self.arrayOfShorter.append(shortenedFileName)
         
         # Display the short file name in a new row.
         self.workArea.InsertStringItem((len(self.arrayOfFiles) - 1), shortenedFileName)
@@ -318,7 +323,7 @@ class Replace(wx.Panel):
             # If one of the boxes has nothing in it, return to the default.
             counter = 0
             for file in self.files.arrayOfPreviews:
-                newFile = self.files.arrayOfOriginals[counter]
+                newFile = self.files.arrayOfShorter[counter]
                 self.files.workArea.SetStringItem(counter, 1, newFile)
                 counter += 1
             
