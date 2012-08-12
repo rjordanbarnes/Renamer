@@ -340,7 +340,7 @@ class Casing(wx.Panel):
     def __init__(self, parent, files):
         wx.Panel.__init__(self, parent)
         t = wx.StaticText(self, -1, "Change Casing of text", (60,60))
-	
+    
 def main():
     app = wx.App(False)
     frame = MainFrame(None, TITLE, WIDTH, HEIGHT)

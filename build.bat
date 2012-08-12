@@ -2,7 +2,7 @@ cd D:\Jordan\Programming\Python\Projects\Renamer
 rmdir dist /S /Q
 
 set PIP=C:\Python27\pyinstaller\
-python %PIP%Makespec.py --onefile --upx --tk -w renamer.py
+python %PIP%Makespec.py --onefile --upx --tk -w src/renamer.py
 python %PIP%Build.py renamer.spec
 
 ECHO Y | DEL warnrenamer.txt
