@@ -88,6 +88,7 @@ class MainFrame(wx.Frame):
 
         # Set up tabs and default to General.
         self.tabs = wx.Notebook(self)
+        self.tabs.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGING, self.onTabChanging)
 
         self.generalButton.SetValue(True)
         self.displayTabs("general", self.tabs)
@@ -103,6 +104,9 @@ class MainFrame(wx.Frame):
         ''' Turns all buttons but General off and displays the correct tabs.'''
         isPressed = self.generalButton.GetValue()
 
+        currentPage = self.tabs.GetCurrentPage()
+        currentPage.cleanUpTab()
+
         if isPressed:
             self.musicButton.SetValue(False)
             self.videoButton.SetValue(False)
@@ -115,6 +119,9 @@ class MainFrame(wx.Frame):
         ''' Turns all buttons but Music off and displays the correct tabs.'''
         isPressed = self.musicButton.GetValue()
 
+        currentPage = self.tabs.GetCurrentPage()
+        currentPage.cleanUpTab()
+
         if isPressed:
             self.generalButton.SetValue(False)
             self.videoButton.SetValue(False)
@@ -126,6 +133,9 @@ class MainFrame(wx.Frame):
     def selectVideoButton(self, e):
         ''' Turns all buttons but Video off and displays the correct tabs.'''
         isPressed = self.videoButton.GetValue()
+
+        currentPage = self.tabs.GetCurrentPage()
+        currentPage.cleanUpTab()
 
         if isPressed:
             self.generalButton.SetValue(False)
@@ -152,6 +162,14 @@ class MainFrame(wx.Frame):
             notebook.AddPage(Replace(notebook, files), "Video 1")
             notebook.AddPage(AddAndRemove(notebook, files), "Video 2")
             notebook.AddPage(Casing(notebook, files), "Video 3")
+
+    def onTabChanging(self, e):
+        '''Cleans up the current tab contents when the tab is changed.'''
+        try:
+            currentPage = self.tabs.GetCurrentPage()
+            currentPage.cleanUpTab()
+        except:
+            pass
 
     def selectRenameButton(self, e):
         ''' Renames the files with the file Previews.'''
@@ -355,6 +373,10 @@ class Replace(wx.Panel):
                 newFile = self.files.arrayOfShorter[counter]
                 self.files.workArea.SetStringItem(counter, 1, newFile)
                 counter += 1
+
+    def cleanUpTab(self):
+        self.findBox.Clear()
+        self.replaceBox.Clear()
 
     def updatePreview(self, e):
         '''What happens when the Find box or Replace box is edited.'''
