@@ -1,3 +1,3 @@
 A program that renames files.
 
-Made by Disast3r (rjordanbarnes@gmail.com)
+Made by Jordan Barnes (rjordanbarnes@gmail.com)

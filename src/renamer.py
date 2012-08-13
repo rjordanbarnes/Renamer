@@ -16,7 +16,7 @@ class MainFrame(wx.Frame):
         self.initializeContents()
 
     def initializeMenuBar(self):
-        '''Initializes the important Menu Bar.'''
+        ''' Initializes the important Menu Bar.'''
         # File Menu entries.
         fileMenu = wx.Menu()
         menuOpen = fileMenu.Append(wx.ID_OPEN, 'Open', '')
@@ -82,7 +82,7 @@ class MainFrame(wx.Frame):
         # Sets up File Drop Area.
 
         self.groupOfFiles = GroupOfFiles(self.workArea)
-        fileDropArea = FileDrop(self.workArea, self.groupOfFiles)
+        fileDropArea = FileDrop(self, self.workArea, self.groupOfFiles)
         self.workArea.SetDropTarget(fileDropArea)
         self.workArea.SetGroupOfFiles(self.groupOfFiles)
 
@@ -100,7 +100,7 @@ class MainFrame(wx.Frame):
         self.renameButton.Bind(wx.EVT_BUTTON, self.selectRenameButton)
 
     def selectGeneralButton(self, e):
-        '''Turns all buttons but General off and displays the correct tabs.'''
+        ''' Turns all buttons but General off and displays the correct tabs.'''
         isPressed = self.generalButton.GetValue()
 
         if isPressed:
@@ -112,7 +112,7 @@ class MainFrame(wx.Frame):
         self.displayTabs("general", self.tabs)
 
     def selectMusicButton(self, e):
-        '''Turns all buttons but Music off and displays the correct tabs.'''
+        ''' Turns all buttons but Music off and displays the correct tabs.'''
         isPressed = self.musicButton.GetValue()
 
         if isPressed:
@@ -124,7 +124,7 @@ class MainFrame(wx.Frame):
         self.displayTabs("music", self.tabs)
 
     def selectVideoButton(self, e):
-        '''Turns all buttons but Video off and displays the correct tabs.'''
+        ''' Turns all buttons but Video off and displays the correct tabs.'''
         isPressed = self.videoButton.GetValue()
 
         if isPressed:
@@ -136,7 +136,7 @@ class MainFrame(wx.Frame):
         self.displayTabs("video", self.tabs)
 
     def displayTabs(self, button, notebook):
-        '''Controls which tabs are displayed when certain buttons are pressed.'''
+        ''' Controls which tabs are displayed when certain buttons are pressed.'''
         notebook.DeleteAllPages()
 
         files = self.groupOfFiles
@@ -154,15 +154,15 @@ class MainFrame(wx.Frame):
             notebook.AddPage(Casing(notebook, files), "Video 3")
 
     def selectRenameButton(self, e):
-        '''Renames the files with the file Previews.'''
+        ''' Renames the files with the file Previews.'''
         self.groupOfFiles.renameFiles()
 
     def openFolder(self, e):
-        '''Brings up the file browser window to find a folder with files in it.'''
+        ''' Brings up the file browser window to find a folder with files in it.'''
         pass
 
     def aboutProgram(self, e):
-        '''Displays author information.'''
+        ''' Displays author information.'''
         prompt = wx.MessageDialog(self, 'Created by Jordan Barnes\nrjordanbarnes@gmail.com', 'About', wx.OK)
         prompt.ShowModal()
         prompt.Destroy()
@@ -174,6 +174,7 @@ class MainFrame(wx.Frame):
 
 class WorkArea(wx.ListCtrl):
     def __init__(self, parent, ID=wx.ID_ANY):
+        ''' The right side of the program where files are added.'''
         wx.ListCtrl.__init__(self, parent, ID)
 
         self.SetSingleStyle(wx.LC_REPORT)
@@ -185,10 +186,11 @@ class WorkArea(wx.ListCtrl):
         self.cur = None
 
     def SetGroupOfFiles(self, groupOfFiles):
+        ''' Sets up the GroupOfFiles.'''
         self.groupOfFiles = groupOfFiles
 
     def onLeftDown(self, event):
-        '''Selects an entry in the Work Area.'''
+        ''' Selects an entry in the Work Area.'''
         if self.cur != None:
             self.Select(self.cur, 0)  # Deselect currently selected item
 
@@ -199,7 +201,7 @@ class WorkArea(wx.ListCtrl):
         self.cur = row
 
     def onRightDown(self, event):
-        '''Brings up the context menu in the Work Area.'''
+        ''' Brings up the context menu in the Work Area.'''
         menu = wx.Menu()
         delete = menu.Append(wx.ID_ANY, 'Remove')
 
@@ -211,7 +213,7 @@ class WorkArea(wx.ListCtrl):
         self.PopupMenu(menu, event.GetPosition())
 
     def onDelete(self, event):
-        '''Removes the row in the Work Area and gets rid of the item from the arrays.'''
+        ''' Removes the row in the Work Area and gets rid of the item from the arrays.'''
         self.DeleteItem(self.cur)
         self.groupOfFiles.arrayOfFiles.pop(self.cur)
         self.groupOfFiles.arrayOfPreviews.pop(self.cur)
@@ -220,14 +222,15 @@ class WorkArea(wx.ListCtrl):
 
 
 class FileDrop(wx.FileDropTarget):
-    '''The File Drop Area object.'''
-    def __init__(self, workArea, groupOfFiles):
+    ''' The File Drop Area object.'''
+    def __init__(self, parent, workArea, groupOfFiles):
         wx.FileDropTarget.__init__(self)
+        self.parent = parent
         self.workArea = workArea
         self.groupOfFiles = groupOfFiles
 
     def OnDropFiles(self, x, y, filenames):
-        '''Whenever a file is dropped on the area.'''
+        ''' Whenever a file is dropped on the area.'''
         for name in filenames:
             # No duplicates.
             if self.groupOfFiles.arrayOfOriginals.count(name) == 0:
@@ -243,6 +246,10 @@ class FileDrop(wx.FileDropTarget):
                     dlg = wx.MessageDialog(None, 'Cannot open non ascii files\n' + str(error))
                     dlg.ShowModal()
 
+        # Refresh Work Area when new file is added.
+        currentTab = self.parent.tabs.GetCurrentPage()
+        currentTab.refresh()
+
 
 class GroupOfFiles:
     def __init__(self, workArea):
@@ -253,7 +260,7 @@ class GroupOfFiles:
         self.workArea = workArea
 
     def addFile(self, selectedFile):
-        '''Adds a file to the array of files and shows it on screen in its shortened form.'''
+        ''' Adds a file to the array of files and shows it on screen in its shortened form.'''
         # arrayOfFiles gets the actual file.
         self.arrayOfFiles.append(selectedFile)
 
@@ -272,26 +279,26 @@ class GroupOfFiles:
         self.workArea.SetStringItem((len(self.arrayOfPreviews) - 1), 1, shortenedFileName)
 
     def shortenFileName(self, selectedFile):
-        '''Finds the first backslash from the end of the file name and gets rid of everything but the file's name.'''
+        ''' Finds the first backslash from the end of the file name and gets rid of everything but the file's name.'''
         shortenedFileName = selectedFile.name[(selectedFile.name.rindex('\\') + 1):]
         newShortFileName = unicodedata.normalize('NFKD', shortenedFileName).encode('ascii', 'ignore')
         return newShortFileName
 
     def displayPath(self, selectedFile):
-        '''Returns the path of the selected file.'''
+        ''' Returns the path of the selected file.'''
         filePath = selectedFile.name[:(selectedFile.name.rindex('\\') + 1)]
         newFilePath = unicodedata.normalize('NFKD', filePath).encode('ascii', 'ignore')
         return newFilePath
 
     def renameFiles(self):
-        '''Renames each file to the name found in the Preview column.'''
+        ''' Renames each file to the name found in the Preview column.'''
         counter = 0
         for selectedFile in self.arrayOfFiles:
             os.chdir(self.displayPath(selectedFile))
             # Changes the current file name to the string found in the Preview column.
             os.rename(self.shortenFileName(selectedFile), self.workArea.GetItem(counter, 1).GetText())
 
-            # Update all of the arrays.
+            # Update all of the arrays to new name.
             # arrayOfFiles (the actual file)
             self.arrayOfFiles[counter] = open((self.displayPath(selectedFile) + self.workArea.GetItem(counter, 1).GetText()), 'r')
             shortenedCurrentName = self.shortenFileName(self.arrayOfFiles[counter])
@@ -316,6 +323,7 @@ Renaming Rules.
 
 class Replace(wx.Panel):
     def __init__(self, parent, files):
+        ''' Replaces all instances of a string with another string.'''
         wx.Panel.__init__(self, parent)
 
         self.files = files
