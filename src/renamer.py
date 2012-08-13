@@ -279,7 +279,7 @@ class GroupOfFiles:
 
     def displayPath(self, selectedFile):
         '''Returns the path of the selected file.'''
-        filePath = selectedFile.name[(selectedFile.name.rindex('\\') + 1):]
+        filePath = selectedFile.name[:(selectedFile.name.rindex('\\') + 1)]
         newFilePath = unicodedata.normalize('NFKD', filePath).encode('ascii', 'ignore')
         return newFilePath
 
@@ -287,14 +287,25 @@ class GroupOfFiles:
         '''Renames each file to the name found in the Preview column.'''
         counter = 0
         for selectedFile in self.arrayOfFiles:
-            os.chdir("D:\\Jordan\\Desktop\\lol\\")
-            print os.getcwd()
-            try:
-                # Changes the current file name to the string found in the Preview column.
-                os.rename(self.shortenFileName(selectedFile), self.workArea.GetItem(counter, 1).GetText())
-                print "Yay"
-            except:
-                print "Nope"
+            os.chdir(self.displayPath(selectedFile))
+            # Changes the current file name to the string found in the Preview column.
+            os.rename(self.shortenFileName(selectedFile), self.workArea.GetItem(counter, 1).GetText())
+
+            # Update all of the arrays.
+            # arrayOfFiles (the actual file)
+            self.arrayOfFiles[counter] = open((self.displayPath(selectedFile) + self.workArea.GetItem(counter, 1).GetText()), 'r')
+            shortenedCurrentName = self.shortenFileName(self.arrayOfFiles[counter])
+            # arrayOfPreviews (shortened version)
+            self.arrayOfPreviews[counter] = shortenedCurrentName
+            # arrayOfOriginals (full path)
+            self.arrayOfOriginals[counter] = (selectedFile.name)
+            # arrayOfShorter (shortened version that never changes)
+            self.arrayOfShorter[counter] = shortenedCurrentName
+
+            # Updates the Work Space and close file.
+            self.workArea.SetStringItem(counter, 0, shortenedCurrentName)
+            self.workArea.SetStringItem(counter, 1, shortenedCurrentName)
+            self.arrayOfFiles[counter].close()
             counter += 1
 
 
