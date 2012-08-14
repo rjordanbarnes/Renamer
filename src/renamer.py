@@ -81,10 +81,9 @@ class MainFrame(wx.Frame):
 
         # Sets up File Drop Area.
 
-        self.groupOfFiles = GroupOfFiles(self.workArea)
+        self.groupOfFiles = GroupOfFiles(self, self.workArea)
         fileDropArea = FileDrop(self, self.workArea, self.groupOfFiles)
         self.workArea.SetDropTarget(fileDropArea)
-        self.workArea.SetGroupOfFiles(self.groupOfFiles)
 
         # Set up tabs and default to General.
         self.tabs = wx.Notebook(self)
@@ -99,6 +98,9 @@ class MainFrame(wx.Frame):
         self.renameButton = wx.Button(self, label='Rename', size=(300, 80))
         categorySplitter.Add(self.renameButton, 0, wx.ALIGN_BOTTOM)
         self.renameButton.Bind(wx.EVT_BUTTON, self.selectRenameButton)
+
+        # Adds a few variables to the Work Area.
+        self.workArea.SetVariables(self.groupOfFiles, self.tabs)
 
     def selectGeneralButton(self, e):
         ''' Turns all buttons but General off and displays the correct tabs.'''
@@ -152,15 +154,16 @@ class MainFrame(wx.Frame):
         files = self.groupOfFiles
         if button is "general":
             notebook.AddPage(Replace(notebook, files), "Replace")
-            notebook.AddPage(AddAndRemove(notebook, files), "Add/Remove")
+            notebook.AddPage(Add(notebook, files), "Add")
+            notebook.AddPage(Remove(notebook, files), "Remove")
             notebook.AddPage(Casing(notebook, files), "Casing")
         elif button is "music":
             notebook.AddPage(Replace(notebook, files), "Music 1")
-            notebook.AddPage(AddAndRemove(notebook, files), "Music 2")
+            notebook.AddPage(Add(notebook, files), "Music 2")
             notebook.AddPage(Casing(notebook, files), "Music 3")
         elif button is "video":
             notebook.AddPage(Replace(notebook, files), "Video 1")
-            notebook.AddPage(AddAndRemove(notebook, files), "Video 2")
+            notebook.AddPage(Add(notebook, files), "Video 2")
             notebook.AddPage(Casing(notebook, files), "Video 3")
 
     def onTabChanging(self, e):
@@ -196,6 +199,7 @@ class WorkArea(wx.ListCtrl):
         wx.ListCtrl.__init__(self, parent, ID)
 
         self.SetSingleStyle(wx.LC_REPORT)
+        self.parent = parent
 
         self.Bind(wx.EVT_LEFT_DOWN, self.onLeftDown)
         self.Bind(wx.EVT_RIGHT_DOWN, self.onRightDown)
@@ -203,9 +207,10 @@ class WorkArea(wx.ListCtrl):
         # Currently selected row
         self.cur = None
 
-    def SetGroupOfFiles(self, groupOfFiles):
+    def SetVariables(self, groupOfFiles, tabs):
         ''' Sets up the GroupOfFiles.'''
         self.groupOfFiles = groupOfFiles
+        self.tabs = tabs
 
     def onLeftDown(self, event):
         ''' Selects an entry in the Work Area.'''
@@ -237,6 +242,9 @@ class WorkArea(wx.ListCtrl):
         self.groupOfFiles.arrayOfPreviews.pop(self.cur)
         self.groupOfFiles.arrayOfOriginals.pop(self.cur)
         self.groupOfFiles.arrayOfShorter.pop(self.cur)
+
+        currentTab = self.tabs.GetCurrentPage()
+        currentTab.refresh()
 
 
 class FileDrop(wx.FileDropTarget):
@@ -270,12 +278,13 @@ class FileDrop(wx.FileDropTarget):
 
 
 class GroupOfFiles:
-    def __init__(self, workArea):
+    def __init__(self, parent, workArea):
         self.arrayOfFiles = []
         self.arrayOfPreviews = []
         self.arrayOfOriginals = []
         self.arrayOfShorter = []
         self.workArea = workArea
+        self.parent = parent
 
     def addFile(self, selectedFile):
         ''' Adds a file to the array of files and shows it on screen in its shortened form.'''
@@ -333,6 +342,9 @@ class GroupOfFiles:
             self.arrayOfFiles[counter].close()
             counter += 1
 
+        currentTab = self.parent.tabs.GetCurrentPage()
+        currentTab.refresh()
+
 
 '''
 Renaming Rules.
@@ -348,8 +360,8 @@ class Replace(wx.Panel):
 
         wx.StaticText(self, -1, "Find", (40, 30))
         self.findBox = wx.TextCtrl(self, pos=(40, 50), size=(200, 20))
-        wx.StaticText(self, -1, "Replace With", (40, 80))
-        self.replaceBox = wx.TextCtrl(self, pos=(40, 100), size=(200, 20))
+        wx.StaticText(self, -1, "Replace With", (40, 90))
+        self.replaceBox = wx.TextCtrl(self, pos=(40, 110), size=(200, 20))
 
         self.Bind(wx.EVT_TEXT, self.updatePreview, self.findBox)
         self.Bind(wx.EVT_TEXT, self.updatePreview, self.replaceBox)
@@ -383,10 +395,78 @@ class Replace(wx.Panel):
         self.refresh()
 
 
-class AddAndRemove(wx.Panel):
+class Add(wx.Panel):
     def __init__(self, parent, files):
         wx.Panel.__init__(self, parent)
-        wx.StaticText(self, -1, "Add/Remove text", (40, 40))
+        self.files = files
+
+        wx.StaticText(self, -1, "Insert", (40, 30))
+        self.insertBox = wx.TextCtrl(self, pos=(40, 50), size=(200, 20))
+
+        wx.StaticText(self, -1, "At Position", (40, 90))
+        self.positionSlider = wx.Slider(self, value=0, minValue=0, maxValue=10, pos=(80, 110), size=(170, -1), style=wx.SL_HORIZONTAL | wx.SL_AUTOTICKS)
+
+        self.positionBox = wx.TextCtrl(self, pos=(40, 110), size=(30, 20))
+        self.positionBox.SetMaxLength(3)
+        self.positionBox.ChangeValue(str(self.positionSlider.GetValue()))
+
+        self.Bind(wx.EVT_TEXT, self.onEditBox, self.insertBox)
+        self.Bind(wx.EVT_TEXT, self.onEditBox, self.positionBox)
+        self.Bind(wx.EVT_SCROLL, self.onMovePositionSlider, self.positionSlider)
+
+    def onMovePositionSlider(self, e):
+        self.positionBox.ChangeValue(str(self.positionSlider.GetValue()))
+        self.refresh()
+
+    def onEditBox(self, e):
+        self.refresh()
+
+    def refresh(self):
+        # First finds the longest name in the files and sets the Max Slider value to that.
+        longestName = 0
+        for currentFile in self.files.arrayOfPreviews:
+            if len(currentFile) > longestName:
+                longestName = len(currentFile)
+        self.positionSlider.SetMax(longestName)
+        self.checkPositionBoxValidity()
+
+        # Then performs the actual preview change.
+        insertBoxValue = unicodedata.normalize('NFKD', self.insertBox.GetValue()).encode('ascii', 'ignore')
+        positionBoxValue = int(self.positionBox.GetValue())
+
+        counter = 0
+        for selectedFile in self.files.arrayOfPreviews:
+            # Splits the file into a list, adds in the new string, and then returns the entire thing to a string to display in the Preview pane.
+            fileAsList = list(selectedFile)
+            fileAsList.insert(positionBoxValue, insertBoxValue)
+            fileAsString = ''.join(fileAsList)
+            self.files.workArea.SetStringItem(counter, 1, fileAsString)
+            counter += 1
+
+    def checkPositionBoxValidity(self):
+        ''' Makes sure that the Position Box stays within the Min/Max of the slider.'''
+        try:
+            # If the Box is greater than the Max Slider, set the box to the Max Slider.
+            if int(self.positionBox.GetValue()) > self.positionSlider.GetMax():
+                self.positionBox.ChangeValue(str(self.positionSlider.GetMax()))
+            # The slider then updates to the Box.
+            self.positionSlider.SetValue(int(self.positionBox.GetValue()))
+        except:
+            # Sets everything to the minimum if a non-int is entered.
+            self.positionBox.ChangeValue(str(self.positionSlider.GetMin()))
+            self.positionSlider.SetValue(self.positionSlider.GetMin())
+
+    def cleanUpTab(self):
+        self.insertBox.Clear()
+        self.positionBox.ChangeValue('0')
+        self.positionSlider.SetValue(0)
+        self.checkPositionBoxValidity()
+
+
+class Remove(wx.Panel):
+    def __init__(self, parent, files):
+        wx.Panel.__init__(self, parent)
+        wx.StaticText(self, -1, "Remove", (40, 40))
 
 
 class Casing(wx.Panel):
