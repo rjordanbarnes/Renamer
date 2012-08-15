@@ -404,7 +404,7 @@ class Add(wx.Panel):
         wx.StaticText(self, -1, "Insert", (40, 30))
         self.insertBox = wx.TextCtrl(self, pos=(40, 50), size=(200, 20))
 
-        wx.StaticText(self, -1, "At The", (40, 90))
+        wx.StaticText(self, -1, "From The", (40, 90))
         self.startButton = wx.RadioButton(self, label='Start', pos=(40, 114), style=wx.RB_GROUP)
         self.endButton = wx.RadioButton(self, label='End', pos=(100, 114))
 
@@ -432,6 +432,11 @@ class Add(wx.Panel):
         self.refresh()
 
     def refresh(self):
+        if self.endButton.GetValue():
+            self.positionSlider.SetWindowStyle(wx.SL_INVERSE | wx.SL_AUTOTICKS)
+        else:
+            self.positionSlider.SetWindowStyle(wx.SL_HORIZONTAL | wx.SL_AUTOTICKS)
+
         # First finds the longest name in the files and sets the Max Slider value to that.
         longestName = 0
         for currentFile in self.files.arrayOfPreviews:
@@ -477,9 +482,11 @@ class Add(wx.Panel):
 
     def cleanUpTab(self):
         self.insertBox.Clear()
+        self.positionSlider.SetWindowStyle(wx.SL_HORIZONTAL | wx.SL_AUTOTICKS)
         self.positionBox.ChangeValue('0')
         self.positionSlider.SetValue(0)
         self.checkPositionBoxValidity()
+        self.startButton.SetValue(True)
 
 
 class Remove(wx.Panel):
