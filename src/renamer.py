@@ -404,22 +404,31 @@ class Add(wx.Panel):
         wx.StaticText(self, -1, "Insert", (40, 30))
         self.insertBox = wx.TextCtrl(self, pos=(40, 50), size=(200, 20))
 
-        wx.StaticText(self, -1, "At Position", (40, 90))
-        self.positionSlider = wx.Slider(self, value=0, minValue=0, maxValue=10, pos=(80, 110), size=(170, -1), style=wx.SL_HORIZONTAL | wx.SL_AUTOTICKS)
+        wx.StaticText(self, -1, "At The", (40, 90))
+        self.startButton = wx.RadioButton(self, label='Start', pos=(40, 114), style=wx.RB_GROUP)
+        self.endButton = wx.RadioButton(self, label='End', pos=(100, 114))
 
-        self.positionBox = wx.TextCtrl(self, pos=(40, 110), size=(30, 20))
+        wx.StaticText(self, -1, "At Position", (40, 150))
+        self.positionSlider = wx.Slider(self, value=0, minValue=0, maxValue=10, pos=(80, 170), size=(170, -1), style=wx.SL_HORIZONTAL | wx.SL_AUTOTICKS)
+
+        self.positionBox = wx.TextCtrl(self, pos=(40, 170), size=(30, 20))
         self.positionBox.SetMaxLength(3)
         self.positionBox.ChangeValue(str(self.positionSlider.GetValue()))
 
         self.Bind(wx.EVT_TEXT, self.onEditBox, self.insertBox)
         self.Bind(wx.EVT_TEXT, self.onEditBox, self.positionBox)
         self.Bind(wx.EVT_SCROLL, self.onMovePositionSlider, self.positionSlider)
+        self.Bind(wx.EVT_RADIOBUTTON, self.onRadioButton, self.startButton)
+        self.Bind(wx.EVT_RADIOBUTTON, self.onRadioButton, self.endButton)
 
     def onMovePositionSlider(self, e):
         self.positionBox.ChangeValue(str(self.positionSlider.GetValue()))
         self.refresh()
 
     def onEditBox(self, e):
+        self.refresh()
+
+    def onRadioButton(self, e):
         self.refresh()
 
     def refresh(self):
@@ -434,12 +443,21 @@ class Add(wx.Panel):
         # Then performs the actual preview change.
         insertBoxValue = unicodedata.normalize('NFKD', self.insertBox.GetValue()).encode('ascii', 'ignore')
         positionBoxValue = int(self.positionBox.GetValue())
+        radioEnd = self.endButton.GetValue()
 
         counter = 0
         for selectedFile in self.files.arrayOfPreviews:
             # Splits the file into a list, adds in the new string, and then returns the entire thing to a string to display in the Preview pane.
             fileAsList = list(selectedFile)
+
+            if radioEnd:
+                fileAsList.reverse()  # Reverses the list if the End button is pressed.
+
             fileAsList.insert(positionBoxValue, insertBoxValue)
+
+            if radioEnd:
+                fileAsList.reverse()  # Reverts the reversal.
+
             fileAsString = ''.join(fileAsList)
             self.files.workArea.SetStringItem(counter, 1, fileAsString)
             counter += 1
