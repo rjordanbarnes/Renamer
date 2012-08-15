@@ -237,11 +237,12 @@ class WorkArea(wx.ListCtrl):
 
     def onDelete(self, event):
         ''' Removes the row in the Work Area and gets rid of the item from the arrays.'''
-        self.DeleteItem(self.cur)
-        self.groupOfFiles.arrayOfFiles.pop(self.cur)
-        self.groupOfFiles.arrayOfPreviews.pop(self.cur)
-        self.groupOfFiles.arrayOfOriginals.pop(self.cur)
-        self.groupOfFiles.arrayOfShorter.pop(self.cur)
+        if self.cur >= 0:
+            self.DeleteItem(self.cur)
+            self.groupOfFiles.arrayOfFiles.pop(self.cur)
+            self.groupOfFiles.arrayOfPreviews.pop(self.cur)
+            self.groupOfFiles.arrayOfOriginals.pop(self.cur)
+            self.groupOfFiles.arrayOfShorter.pop(self.cur)
 
         currentTab = self.tabs.GetCurrentPage()
         currentTab.refresh()
