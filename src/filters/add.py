@@ -3,9 +3,10 @@ import unicodedata
 
 
 class Add(wx.Panel):
-    def __init__(self, parent, files):
+    def __init__(self, parent, fileManager):
         wx.Panel.__init__(self, parent)
-        self.files = files
+
+        self.fileManager = fileManager
 
         wx.StaticText(self, -1, "Insert", (40, 30))
         self.insertBox = wx.TextCtrl(self, pos=(40, 50), size=(200, 20))
@@ -29,15 +30,17 @@ class Add(wx.Panel):
 
     def onMovePositionSlider(self, e):
         self.positionBox.ChangeValue(str(self.positionSlider.GetValue()))
-        self.refresh()
+        self.fileManager.previewRefresh()
 
     def onEditBox(self, e):
-        self.refresh()
+        self.fileManager.previewRefresh()
 
     def onRadioButton(self, e):
-        self.refresh()
+        self.fileManager.previewRefresh()
 
-    def refresh(self):
+    def refresh(self, previews):
+        '''Edits the preview directly.'''
+        # Determines which way to display the slider.
         if self.endButton.GetValue():
             self.positionSlider.SetWindowStyle(wx.SL_INVERSE | wx.SL_AUTOTICKS)
         else:
@@ -45,7 +48,7 @@ class Add(wx.Panel):
 
         # First finds the longest name in the files and sets the Max Slider value to that.
         longestName = 0
-        for currentFile in self.files.arrayOfPreviews:
+        for currentFile in previews:
             if len(currentFile) > longestName:
                 longestName = len(currentFile)
         self.positionSlider.SetMax(longestName)
@@ -57,8 +60,8 @@ class Add(wx.Panel):
         radioEnd = self.endButton.GetValue()
 
         counter = 0
-        for selectedFile in self.files.arrayOfPreviews:
-            # Splits the file into a list, adds in the new string, and then returns the entire thing to a string to display in the Preview pane.
+        for selectedFile in previews:
+            # Splits the file into a list, adds in the new string, and then gives the new string to the previews.
             fileAsList = list(selectedFile)
 
             if radioEnd:
@@ -70,7 +73,7 @@ class Add(wx.Panel):
                 fileAsList.reverse()  # Reverts the reversal.
 
             fileAsString = ''.join(fileAsList)
-            self.files.workArea.SetStringItem(counter, 1, fileAsString)
+            previews[counter] = fileAsString
             counter += 1
 
     def checkPositionBoxValidity(self):

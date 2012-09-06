@@ -1,18 +1,13 @@
 import wx
-import os
-import unicodedata
+import files
 from filters import *
-
-TITLE = "Renaming Tool"
-WIDTH = 900
-HEIGHT = 600
 
 
 class MainFrame(wx.Frame):
     def __init__(self, parent, title, width, height):
         wx.Frame.__init__(self, parent, title=title, size=(width, height), style=wx.DEFAULT_FRAME_STYLE)
         self.Center()
-        self.SetMinSize((WIDTH - 250, HEIGHT - 200))
+        self.SetMinSize((width - 250, height - 200))
         self.initializeMenuBar()
         self.initializeContents()
 
@@ -82,8 +77,8 @@ class MainFrame(wx.Frame):
 
         # Sets up File Drop Area.
 
-        self.groupOfFiles = GroupOfFiles(self, self.workArea)
-        fileDropArea = FileDrop(self, self.workArea, self.groupOfFiles)
+        self.fileManager = files.FileManager(self, self.workArea)
+        fileDropArea = FileDrop(self, self.workArea, self.fileManager)
         self.workArea.SetDropTarget(fileDropArea)
 
         # Set up tabs and default to General.
@@ -101,71 +96,55 @@ class MainFrame(wx.Frame):
         self.renameButton.Bind(wx.EVT_BUTTON, self.selectRenameButton)
 
         # Adds a few variables to the Work Area.
-        self.workArea.SetVariables(self.groupOfFiles, self.tabs)
+        self.workArea.SetVariables(self.fileManager, self.tabs)
 
     def selectGeneralButton(self, e):
         ''' Turns all buttons but General off and displays the correct tabs.'''
-        isPressed = self.generalButton.GetValue()
-
-        currentPage = self.tabs.GetCurrentPage()
-        currentPage.cleanUpTab()
-
-        if isPressed:
-            self.musicButton.SetValue(False)
-            self.videoButton.SetValue(False)
-        else:
-            self.generalButton.SetValue(True)
-
-        self.displayTabs("general", self.tabs)
+        self.selectCategoryButton(self.generalButton, 'general')
 
     def selectMusicButton(self, e):
         ''' Turns all buttons but Music off and displays the correct tabs.'''
-        isPressed = self.musicButton.GetValue()
-
-        currentPage = self.tabs.GetCurrentPage()
-        currentPage.cleanUpTab()
-
-        if isPressed:
-            self.generalButton.SetValue(False)
-            self.videoButton.SetValue(False)
-        else:
-            self.musicButton.SetValue(True)
-
-        self.displayTabs("music", self.tabs)
+        self.selectCategoryButton(self.musicButton, 'music')
 
     def selectVideoButton(self, e):
         ''' Turns all buttons but Video off and displays the correct tabs.'''
-        isPressed = self.videoButton.GetValue()
+        self.selectCategoryButton(self.videoButton, 'video')
 
-        currentPage = self.tabs.GetCurrentPage()
-        currentPage.cleanUpTab()
+    def selectCategoryButton(self, category, button):
+        ''' Cleans up the current tab, resets all category buttons to unpressed, then sets the correct one to pressed and displays the correct tab content.'''
+        currentTab = self.getCurrentTab()
+        currentTab.cleanUpTab()
 
-        if isPressed:
-            self.generalButton.SetValue(False)
-            self.musicButton.SetValue(False)
-        else:
-            self.videoButton.SetValue(True)
+        # Unpresses everything.
+        self.generalButton.SetValue(False)
+        self.videoButton.SetValue(False)
+        self.musicButton.SetValue(False)
 
-        self.displayTabs("video", self.tabs)
+        # Press correct button and shows the correct tab information.
+        category.SetValue(True)
+        self.displayTabs(button, self.tabs)
 
     def displayTabs(self, button, notebook):
         ''' Controls which tabs are displayed when certain buttons are pressed.'''
         notebook.DeleteAllPages()
 
-        files = self.groupOfFiles
+        fileManager = self.fileManager
         if button is "general":
-            notebook.AddPage(replace.Replace(notebook, files), "Replace")
-            notebook.AddPage(add.Add(notebook, files), "Add")
-            notebook.AddPage(remove.Remove(notebook, files), "Remove")
-            notebook.AddPage(casing.Casing(notebook, files), "Casing")
+            notebook.AddPage(replace.Replace(notebook, fileManager), "Replace")
+            notebook.AddPage(add.Add(notebook, fileManager), "Add")
+            notebook.AddPage(remove.Remove(notebook, fileManager), "Remove")
+            notebook.AddPage(casing.Casing(notebook, fileManager), "Casing")
         elif button is "music":
-            notebook.AddPage(replace.Replace(notebook, files), "Music 1")
-            notebook.AddPage(add.Add(notebook, files), "Music 2")
-            notebook.AddPage(casing.Casing(notebook, files), "Music 3")
+            notebook.AddPage(replace.Replace(notebook, fileManager), "Music 1")
+            notebook.AddPage(add.Add(notebook, fileManager), "Music 2")
+            notebook.AddPage(casing.Casing(notebook, fileManager), "Music 3")
         elif button is "video":
-            notebook.AddPage(replace.Replace(notebook, files), "Video 1")
-            notebook.AddPage(add.Add(notebook, files), "Video 2")
-            notebook.AddPage(casing.Casing(notebook, files), "Video 3")
+            notebook.AddPage(replace.Replace(notebook, fileManager), "Video 1")
+            notebook.AddPage(add.Add(notebook, fileManager), "Video 2")
+            notebook.AddPage(casing.Casing(notebook, fileManager), "Video 3")
+
+    def getCurrentTab(self):
+        return self.tabs.GetCurrentPage()
 
     def onTabChanging(self, e):
         '''Cleans up the current tab contents when the tab is changed.'''
@@ -177,7 +156,7 @@ class MainFrame(wx.Frame):
 
     def selectRenameButton(self, e):
         ''' Renames the files with the file Previews.'''
-        self.groupOfFiles.renameFiles()
+        self.fileManager.renameFiles()
 
     def openFolder(self, e):
         ''' Brings up the file browser window to find a folder with files in it.'''
@@ -208,10 +187,23 @@ class WorkArea(wx.ListCtrl):
         # Currently selected row
         self.cur = None
 
-    def SetVariables(self, groupOfFiles, tabs):
-        ''' Sets up the GroupOfFiles.'''
-        self.groupOfFiles = groupOfFiles
+    def SetVariables(self, fileManager, tabs):
+        ''' Sets up the FileManager.'''
+        self.fileManager = fileManager
         self.tabs = tabs
+
+    def displayFile(self, arrayOfFiles, filename):
+        ''' Displays the filename in a new row.'''
+        self.InsertStringItem((len(arrayOfFiles) - 1), filename)
+        self.SetStringItem((len(arrayOfFiles) - 1), 1, filename)
+
+    def changeName(self, row, newName):
+        ''' Sets the name in the specified row to the newName.'''
+        self.SetStringItem(row, 0, newName)
+
+    def changePreview(self, row, newPreview):
+        ''' Sets the preview in the specified row to the newPreview.'''
+        self.SetStringItem(row, 1, newPreview)
 
     def onLeftDown(self, event):
         ''' Selects an entry in the Work Area.'''
@@ -239,33 +231,29 @@ class WorkArea(wx.ListCtrl):
     def onDelete(self, event):
         ''' Removes the row in the Work Area and gets rid of the item from the arrays.'''
         if self.cur >= 0:
+            self.fileManager.removeFile(self.cur)
             self.DeleteItem(self.cur)
-            self.groupOfFiles.arrayOfFiles.pop(self.cur)
-            self.groupOfFiles.arrayOfPreviews.pop(self.cur)
-            self.groupOfFiles.arrayOfOriginals.pop(self.cur)
-            self.groupOfFiles.arrayOfShorter.pop(self.cur)
 
-        currentTab = self.tabs.GetCurrentPage()
-        currentTab.refresh()
+        self.fileManager.previewRefresh()
 
 
 class FileDrop(wx.FileDropTarget):
     ''' The File Drop Area object.'''
-    def __init__(self, parent, workArea, groupOfFiles):
+    def __init__(self, parent, workArea, fileManager):
         wx.FileDropTarget.__init__(self)
         self.parent = parent
         self.workArea = workArea
-        self.groupOfFiles = groupOfFiles
+        self.fileManager = fileManager
 
     def OnDropFiles(self, x, y, filenames):
         ''' Whenever a file is dropped on the area.'''
         for name in filenames:
             # No duplicates.
-            if self.groupOfFiles.arrayOfOriginals.count(name) == 0:
+            if self.fileManager.fullPaths.count(name) == 0:
                 try:
                     # Open file, add it to the file array, then close it.
                     openedFile = open(name, 'r')
-                    self.groupOfFiles.addFile(openedFile)
+                    self.fileManager.addFile(openedFile)
                     openedFile.close()
                 except IOError, error:
                     dlg = wx.MessageDialog(None, 'Error opening file\n' + str(error))
@@ -273,85 +261,3 @@ class FileDrop(wx.FileDropTarget):
                 except UnicodeDecodeError, error:
                     dlg = wx.MessageDialog(None, 'Cannot open non ascii files\n' + str(error))
                     dlg.ShowModal()
-
-        # Refresh Work Area when new file is added.
-        currentTab = self.parent.tabs.GetCurrentPage()
-        currentTab.refresh()
-
-
-class GroupOfFiles:
-    def __init__(self, parent, workArea):
-        self.arrayOfFiles = []
-        self.arrayOfPreviews = []
-        self.arrayOfOriginals = []
-        self.arrayOfShorter = []
-        self.workArea = workArea
-        self.parent = parent
-
-    def addFile(self, selectedFile):
-        ''' Adds a file to the array of files and shows it on screen in its shortened form.'''
-        # arrayOfFiles gets the actual file.
-        self.arrayOfFiles.append(selectedFile)
-
-        # arrayOfPreviews gets the shortened string form of the file.
-        shortenedFileName = self.shortenFileName(selectedFile)
-        self.arrayOfPreviews.append(shortenedFileName)
-
-        # arrayOfOriginals gets the full unaltered name of the file.
-        self.arrayOfOriginals.append(selectedFile.name)
-
-        # arrayOfShorter gets the shortened string and never changes.
-        self.arrayOfShorter.append(shortenedFileName)
-
-        # Display the short file name in a new row.
-        self.workArea.InsertStringItem((len(self.arrayOfFiles) - 1), shortenedFileName)
-        self.workArea.SetStringItem((len(self.arrayOfPreviews) - 1), 1, shortenedFileName)
-
-    def shortenFileName(self, selectedFile):
-        ''' Finds the first backslash from the end of the file name and gets rid of everything but the file's name.'''
-        shortenedFileName = selectedFile.name[(selectedFile.name.rindex('\\') + 1):]
-        newShortFileName = unicodedata.normalize('NFKD', shortenedFileName).encode('ascii', 'ignore')
-        return newShortFileName
-
-    def displayPath(self, selectedFile):
-        ''' Returns the path of the selected file.'''
-        filePath = selectedFile.name[:(selectedFile.name.rindex('\\') + 1)]
-        newFilePath = unicodedata.normalize('NFKD', filePath).encode('ascii', 'ignore')
-        return newFilePath
-
-    def renameFiles(self):
-        ''' Renames each file to the name found in the Preview column.'''
-        counter = 0
-        for selectedFile in self.arrayOfFiles:
-            os.chdir(self.displayPath(selectedFile))
-            # Changes the current file name to the string found in the Preview column.
-            os.rename(self.shortenFileName(selectedFile), self.workArea.GetItem(counter, 1).GetText())
-
-            # Update all of the arrays to new name.
-            # arrayOfFiles (the actual file)
-            self.arrayOfFiles[counter] = open((self.displayPath(selectedFile) + self.workArea.GetItem(counter, 1).GetText()), 'r')
-            shortenedCurrentName = self.shortenFileName(self.arrayOfFiles[counter])
-            # arrayOfPreviews (shortened version)
-            self.arrayOfPreviews[counter] = shortenedCurrentName
-            # arrayOfOriginals (full path)
-            self.arrayOfOriginals[counter] = (selectedFile.name)
-            # arrayOfShorter (shortened version that never changes)
-            self.arrayOfShorter[counter] = shortenedCurrentName
-
-            # Updates the Work Space and close file.
-            self.workArea.SetStringItem(counter, 0, shortenedCurrentName)
-            self.workArea.SetStringItem(counter, 1, shortenedCurrentName)
-            self.arrayOfFiles[counter].close()
-            counter += 1
-
-        currentTab = self.parent.tabs.GetCurrentPage()
-        currentTab.refresh()
-
-
-def main():
-    app = wx.App(False)
-    frame = MainFrame(None, TITLE, WIDTH, HEIGHT)
-    frame.Show()
-    app.MainLoop()
-
-main()
