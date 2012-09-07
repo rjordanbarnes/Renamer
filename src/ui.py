@@ -84,6 +84,7 @@ class MainFrame(wx.Frame):
         # Set up tabs and default to General.
         self.tabs = wx.Notebook(self)
         self.tabs.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGING, self.onTabChanging)
+        self.tabs.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.onTabChanged)
 
         self.generalButton.SetValue(True)
         self.displayTabs("general", self.tabs)
@@ -144,15 +145,28 @@ class MainFrame(wx.Frame):
             notebook.AddPage(casing.Casing(notebook, fileManager), "Video 3")
 
     def getCurrentTab(self):
+        ''' Returns the current tab.'''
         return self.tabs.GetCurrentPage()
+
+    def setCurrentTab(self, tabNumber):
+        ''' Sets the current tab to the inputted tab number.'''
+        self.tabs.ChangeSelection(tabNumber)
 
     def onTabChanging(self, e):
         '''Cleans up the current tab contents when the tab is changed.'''
         try:
-            currentPage = self.tabs.GetCurrentPage()
-            currentPage.cleanUpTab()
+            oldPage = self.tabs.GetCurrentPage()
+            oldPage.cleanUpTab()
         except:
             pass
+        e.Skip()
+
+    def onTabChanged(self, e):
+        ''' Does a preview refresh after changing tabs.'''
+        currentPageNumber = e.GetSelection()
+        self.setCurrentTab(currentPageNumber)
+        self.fileManager.previewRefresh()
+        e.Skip()
 
     def selectRenameButton(self, e):
         ''' Renames the files with the file Previews.'''

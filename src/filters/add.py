@@ -61,7 +61,7 @@ class Add(wx.Panel):
 
         counter = 0
         for selectedFile in previews:
-            # Splits the file into a list, adds in the new string, and then gives the new string to the previews.
+            # Splits the string into a list, adds in the new string, and then gives the new string to the previews.
             fileAsList = list(selectedFile)
 
             if radioEnd:
