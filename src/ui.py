@@ -248,8 +248,6 @@ class WorkArea(wx.ListCtrl):
         for item in self.selectedItems:
             self.Select(item)   # Select all new items in the array
 
-        print self.selectedItems
-
     def onRightDown(self, event):
         ''' Brings up the context menu in the Work Area.'''
         menu = wx.Menu()
@@ -257,16 +255,19 @@ class WorkArea(wx.ListCtrl):
 
         self.Bind(wx.EVT_MENU, self.onDelete, delete)
 
-        # Select row
-        self.onLeftDown(event)
+        if len(self.selectedItems) < 1:
+            self.onLeftDown(event)  # Select row if no rows are already selected
 
         self.PopupMenu(menu, event.GetPosition())
 
     def onDelete(self, event):
         ''' Removes the row in the Work Area and gets rid of the item from the arrays.'''
-        if self.selectedItems >= 0:
-            self.fileManager.removeFile(self.selectedItems)
-            self.DeleteItem(self.selectedItems)
+        for item in reversed(sorted(self.selectedItems)):  # Sorts and then reverses the array to correspond with indexes
+            self.fileManager.removeFile(item)   # Removes file from arrays in FileManager
+            self.DeleteItem(item)               # Removes files from work area
+            self.Select(item, 0)                # Deselects all files
+
+        self.selectedItems = []
 
         self.fileManager.previewRefresh()
 
