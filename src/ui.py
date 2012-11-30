@@ -15,18 +15,18 @@ class MainFrame(wx.Frame):
         ''' Initializes the important Menu Bar.'''
         # File Menu entries.
         fileMenu = wx.Menu()
-        menuOpen = fileMenu.Append(wx.ID_OPEN, 'Open', '')
+        menuOpen = fileMenu.Append(wx.ID_OPEN, '&Open', '')
         fileMenu.AppendSeparator()
-        menuExit = fileMenu.Append(wx.ID_EXIT, 'Exit', '')
+        menuExit = fileMenu.Append(wx.ID_EXIT, 'E&xit', '')
 
         # Help Menu entries.
         helpMenu = wx.Menu()
-        menuAbout = helpMenu.Append(wx.ID_ABOUT, 'About', '')
+        menuAbout = helpMenu.Append(wx.ID_ABOUT, '&About', '')
 
         # Creates the Menu Bar and adds the top-level menu entries.
         menuBar = wx.MenuBar()
-        menuBar.Append(fileMenu, 'File')
-        menuBar.Append(helpMenu, 'Help')
+        menuBar.Append(fileMenu, '&File')
+        menuBar.Append(helpMenu, '&Help')
         self.SetMenuBar(menuBar)
 
         # Binds events to buttons on the Menu Bar.
@@ -95,6 +95,10 @@ class MainFrame(wx.Frame):
         self.renameButton = wx.Button(self, label='Rename', size=(300, 80))
         categorySplitter.Add(self.renameButton, 0, wx.ALIGN_BOTTOM)
         self.renameButton.Bind(wx.EVT_BUTTON, self.selectRenameButton)
+
+        # Rename button's font.
+        self.renameButtonFont = wx.Font(pointSize=24, family=wx.FONTFAMILY_SWISS, style=wx.FONTSTYLE_NORMAL, weight=wx.FONTWEIGHT_BOLD)
+        self.renameButton.SetFont(self.renameButtonFont)
 
         # Adds a few variables to the Work Area.
         self.workArea.SetVariables(self.fileManager, self.tabs)
@@ -199,7 +203,7 @@ class WorkArea(wx.ListCtrl):
         self.Bind(wx.EVT_RIGHT_DOWN, self.onRightDown)
 
         # Currently selected row
-        self.cur = None
+        self.selectedItems = []
 
     def SetVariables(self, fileManager, tabs):
         ''' Sets up the FileManager.'''
@@ -221,14 +225,30 @@ class WorkArea(wx.ListCtrl):
 
     def onLeftDown(self, event):
         ''' Selects an entry in the Work Area.'''
-        if self.cur != None:
-            self.Select(self.cur, 0)  # Deselect currently selected item
+        self.SetFocus()  # Gives the work area focus
 
+        for item in self.selectedItems:
+            self.Select(item, 0)  # Deselects all selected items
+
+        # Figure out what row was clicked.
         x, y = event.GetPosition()
         row, flags = self.HitTest((x, y))
 
-        self.Select(row)
-        self.cur = row
+        # If Control is held down, add row onto the array, otherwise clear the array and then add the row
+        if row >= 0:
+            if event.ControlDown():
+                if self.selectedItems.count(row) < 1:
+                    self.selectedItems.append(row)
+            else:
+                self.selectedItems = []
+                self.selectedItems.append(row)
+        else:
+            self.selectedItems = []
+
+        for item in self.selectedItems:
+            self.Select(item)   # Select all new items in the array
+
+        print self.selectedItems
 
     def onRightDown(self, event):
         ''' Brings up the context menu in the Work Area.'''
@@ -244,9 +264,9 @@ class WorkArea(wx.ListCtrl):
 
     def onDelete(self, event):
         ''' Removes the row in the Work Area and gets rid of the item from the arrays.'''
-        if self.cur >= 0:
-            self.fileManager.removeFile(self.cur)
-            self.DeleteItem(self.cur)
+        if self.selectedItems >= 0:
+            self.fileManager.removeFile(self.selectedItems)
+            self.DeleteItem(self.selectedItems)
 
         self.fileManager.previewRefresh()
 
