@@ -1,6 +1,7 @@
 import wx
 import files
 from filters import *
+from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 
 
 class MainFrame(wx.Frame):
@@ -52,8 +53,8 @@ class MainFrame(wx.Frame):
         self.videoButton = wx.ToggleButton(self, label='Videos', size=(100, 40))
 
         categorySizer.AddMany([(self.generalButton, 0, wx.SHAPED),
-                                (self.musicButton, 0, wx.SHAPED),
-                                (self.videoButton, 0, wx.SHAPED)])
+                               (self.musicButton, 0, wx.SHAPED),
+                               (self.videoButton, 0, wx.SHAPED)])
 
         self.generalButton.Bind(wx.EVT_TOGGLEBUTTON, self.selectGeneralButton)
         self.musicButton.Bind(wx.EVT_TOGGLEBUTTON, self.selectMusicButton)
@@ -66,14 +67,14 @@ class MainFrame(wx.Frame):
         workAreaPanel = wx.Panel(self, -1)
         self.workArea = WorkArea(workAreaPanel, -1)
 
+        splitterSizer.Add(workAreaPanel, 1, flag=wx.EXPAND)
+
         # The Work Area columns.
         self.workArea.InsertColumn(0, 'Name', width=280)
         self.workArea.InsertColumn(1, 'Preview', width=280)
 
         workAreaSizer.Add(self.workArea, 1, wx.EXPAND)
         workAreaPanel.SetSizer(workAreaSizer)
-
-        splitterSizer.Add(workAreaPanel, 1, flag=wx.EXPAND)
 
         # Sets up File Drop Area.
 
@@ -191,10 +192,11 @@ class MainFrame(wx.Frame):
         self.Close()
 
 
-class WorkArea(wx.ListCtrl):
+class WorkArea(wx.ListCtrl, ListCtrlAutoWidthMixin):
     def __init__(self, parent, ID=wx.ID_ANY):
         ''' The right side of the program where files are added.'''
         wx.ListCtrl.__init__(self, parent, ID)
+        ListCtrlAutoWidthMixin.__init__(self)
 
         self.SetSingleStyle(wx.LC_REPORT)
         self.parent = parent

@@ -13,7 +13,7 @@ class Remove(wx.Panel):
         wx.StaticText(self, -1, "characters", (80, 53))
 
         wx.StaticText(self, -1, "From The", (40, 90))
-        self.frontButton = wx.RadioButton(self, label='Front', pos=(40, 114), style=wx.RB_GROUP)
+        self.startButton = wx.RadioButton(self, label='Start', pos=(40, 114), style=wx.RB_GROUP)
         self.endButton = wx.RadioButton(self, label='End', pos=(100, 114))
 
         wx.StaticText(self, -1, "At Position", (40, 150))
@@ -26,7 +26,7 @@ class Remove(wx.Panel):
         self.Bind(wx.EVT_TEXT, self.onEditBox, self.removeBox)
         self.Bind(wx.EVT_TEXT, self.onEditBox, self.positionBox)
         self.Bind(wx.EVT_SCROLL, self.onMovePositionSlider, self.positionSlider)
-        self.Bind(wx.EVT_RADIOBUTTON, self.onRadioButton, self.frontButton)
+        self.Bind(wx.EVT_RADIOBUTTON, self.onRadioButton, self.startButton)
         self.Bind(wx.EVT_RADIOBUTTON, self.onRadioButton, self.endButton)
 
     def onMovePositionSlider(self, e):
@@ -108,4 +108,4 @@ class Remove(wx.Panel):
         self.positionSlider.SetValue(0)
         self.checkPositionBoxValidity()
         self.checkRemoveBoxValidity()
-        self.frontButton.SetValue(True)
+        self.startButton.SetValue(True)
