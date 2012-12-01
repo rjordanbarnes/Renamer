@@ -201,10 +201,11 @@ class WorkArea(wx.ListCtrl, ListCtrlAutoWidthMixin):
         self.SetSingleStyle(wx.LC_REPORT)
         self.parent = parent
 
+        self.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
         self.Bind(wx.EVT_LEFT_DOWN, self.onLeftDown)
         self.Bind(wx.EVT_RIGHT_DOWN, self.onRightDown)
 
-        # Currently selected row
+        # Currently selected rows
         self.selectedItems = []
 
     def SetVariables(self, fileManager, tabs):
@@ -225,6 +226,18 @@ class WorkArea(wx.ListCtrl, ListCtrlAutoWidthMixin):
         ''' Sets the preview in the specified row to the newPreview.'''
         self.SetStringItem(row, 1, newPreview)
 
+    def onKeyDown(self, event):
+        ''' Adds keyboard shortcuts to the Work Area.'''
+        key = event.GetKeyCode()
+
+        if key == wx.WXK_DELETE:
+            self.onDelete(event)
+        if key == 65 and event.ControlDown():
+            for item in range(self.GetItemCount()):
+                self.Select(item)
+                if self.selectedItems.count(item) < 1:
+                    self.selectedItems.append(item)
+
     def onLeftDown(self, event):
         ''' Selects an entry in the Work Area.'''
         self.SetFocus()  # Gives the work area focus
@@ -236,7 +249,9 @@ class WorkArea(wx.ListCtrl, ListCtrlAutoWidthMixin):
         x, y = event.GetPosition()
         row, flags = self.HitTest((x, y))
 
-        # If Control is held down, add row onto the array, otherwise clear the array and then add the row
+        # If a valid row is clicked and Control is held down,
+        # add row onto the array. Otherwise clear the array
+        # and then add the row.
         if row >= 0:
             if event.ControlDown():
                 if self.selectedItems.count(row) < 1:
@@ -266,7 +281,7 @@ class WorkArea(wx.ListCtrl, ListCtrlAutoWidthMixin):
         ''' Removes the row in the Work Area and gets rid of the item from the arrays.'''
         for item in reversed(sorted(self.selectedItems)):  # Sorts and then reverses the array to correspond with indexes
             self.fileManager.removeFile(item)   # Removes file from arrays in FileManager
-            self.DeleteItem(item)               # Removes files from work area
+            self.DeleteItem(item)               # Removes file from work area
             self.Select(item, 0)                # Deselects all files
 
         self.selectedItems = []
