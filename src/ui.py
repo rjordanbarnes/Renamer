@@ -135,16 +135,16 @@ class MainFrame(wx.Frame):
         notebook.DeleteAllPages()
 
         fileManager = self.fileManager
-        if button is "general":
+        if button == "general":
             notebook.AddPage(replace.Replace(notebook, fileManager), "Replace")
             notebook.AddPage(add.Add(notebook, fileManager), "Add")
             notebook.AddPage(remove.Remove(notebook, fileManager), "Remove")
             notebook.AddPage(casing.Casing(notebook, fileManager), "Casing")
-        elif button is "music":
+        elif button == "music":
             notebook.AddPage(replace.Replace(notebook, fileManager), "Music 1")
             notebook.AddPage(add.Add(notebook, fileManager), "Music 2")
             notebook.AddPage(casing.Casing(notebook, fileManager), "Music 3")
-        elif button is "video":
+        elif button == "video":
             notebook.AddPage(replace.Replace(notebook, fileManager), "Video 1")
             notebook.AddPage(add.Add(notebook, fileManager), "Video 2")
             notebook.AddPage(casing.Casing(notebook, fileManager), "Video 3")
