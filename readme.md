@@ -1,4 +1,4 @@
-A program that renames files.
+A program that bulk renames files.
 
 Made by Jordan Barnes (rjordanbarnes@gmail.com)
 
